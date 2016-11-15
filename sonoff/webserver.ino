@@ -128,7 +128,8 @@ const char HTTP_FORM_MQTT[] PROGMEM =
   "<br/><b>Port</b> (" STR(MQTT_PORT) ")<br/><input id='ml' name='ml' length=5 placeholder='" STR(MQTT_PORT) "' value='{m2}'><br/>"
   "<br/><b>Client Id</b> ({m0})<br/><input id='mc' name='mc' length=32 placeholder='" MQTT_CLIENT_ID "' value='{m3}'><br/>"
   "<br/><b>User</b> (" MQTT_USER ")<br/><input id='mu' name='mu' length=32 placeholder='" MQTT_USER "' value='{m4}'><br/>"
-  "<br/><b>Password</b> (" MQTT_PASS ")<br/><input id='mp' name='mp' length=32 placeholder='" MQTT_PASS "' value='{m5}'><br/>"
+//  "<br/><b>Password</b> (" MQTT_PASS ")<br/><input id='mp' name='mp' length=32 placeholder='" MQTT_PASS "' value='{m5}'><br/>"
+  "<br/><b>Password</b><br/><input id='mp' name='mp' length=32 type='password' placeholder='" MQTT_PASS "' value='{m5}'><br/>"
   "<br/><b>Topic</b> (" MQTT_TOPIC ")<br/><input id='mt' name='mt' length=32 placeholder='" MQTT_TOPIC" ' value='{m6}'><br/>";
 #ifdef USE_DOMOTICZ
 const char HTTP_FORM_DOMOTICZ[] PROGMEM =
@@ -316,16 +317,7 @@ void handleRoot()
 
     if (Maxdevice) {
       if (strlen(webServer->arg("o").c_str())) {
-#ifdef MQTT_SUBTOPIC
-        snprintf_P(svalue, sizeof(svalue), PSTR("%s/%s 2"), webServer->arg("o").c_str(), sysCfg.mqtt_subtopic);
-#else
-        if (atoi(webServer->arg("o").c_str()) == 1) {
-          snprintf_P(svalue, sizeof(svalue), PSTR("light 2"));
-        } else {
-          snprintf_P(svalue, sizeof(svalue), PSTR("%s/light 2"), webServer->arg("o").c_str());
-        }
-#endif
-        do_cmnd(svalue);
+        do_cmnd_power(atoi(webServer->arg("o").c_str()), 2);
       }
 
       page += F("<table style='width:100%'><tr>");
@@ -686,16 +678,24 @@ void handleUploadDone()
     page += F("<font color='red'>failed</font></b>");
     if (_uploaderror == 1) {
       page += F("<br/><br/>No file selected");
+    } else if (_uploaderror == 2) {
+      page += F("<br/><br/>File size is larger than available free space");
     } else if (_uploaderror == 3) {
       page += F("<br/><br/>File magic header does not start with 0xE9");
     } else if (_uploaderror == 4) {
       page += F("<br/><br/>File flash size is larger than device flash size");
+    } else if (_uploaderror == 5) {
+      page += F("<br/><br/>File upload buffer miscompare");
+    } else if (_uploaderror == 6) {
+      page += F("<br/><br/>Upload failed. Enable logging option 3 for more information");
+    } else if (_uploaderror == 7) {
+      page += F("<br/><br/>Upload aborted");
     } else {
       page += F("<br/><br/>Upload error code ");
       page += String(_uploaderror);
     }
     if (Update.hasError()) {
-      page += F("<br/><br/>Update error code ");
+      page += F("<br/><br/>Update error code (see Updater.cpp) ");
       page += String(Update.getError());
     }
   } else {
@@ -860,7 +860,7 @@ void handleInfo()
   page += F("<tr><td><b>MQTT Port</b></td><td>"); page += String(sysCfg.mqtt_port); page += F("</td></tr>");
   page += F("<tr><td><b>MQTT Client and<br/>&nbsp;Fallback Topic</b></td><td>"); page += MQTTClient; page += F("</td></tr>");
   page += F("<tr><td><b>MQTT User</b></td><td>"); page += sysCfg.mqtt_user; page += F("</td></tr>");
-  page += F("<tr><td><b>MQTT Password</b></td><td>"); page += sysCfg.mqtt_pwd; page += F("</td></tr>");
+//  page += F("<tr><td><b>MQTT Password</b></td><td>"); page += sysCfg.mqtt_pwd; page += F("</td></tr>");
   page += F("<tr><td><b>MQTT Topic</b></td><td>"); page += sysCfg.mqtt_topic; page += F("</td></tr>");
   page += F("<tr><td><b>MQTT Group Topic</b></td><td>"); page += sysCfg.mqtt_grptopic; page += F("</td></tr>");
   page += F("<tr><td>&nbsp;</td></tr>");
